@@ -1,0 +1,114 @@
+
+#include <Servo.h> // include servo motor
+
+//#define LED 8 
+#define button1 7 //button 1 - to open tablet holder and go to preset modes
+#define button2 8  //button 2 - to close tablet holder
+
+Servo servo1; //initialize servo motor for open/close mechanism
+Servo servo2; //initialize servo motor for sliding mechanism
+
+int button1state = 0; //reads status of button1
+int button2state = 0; //reads status of button2
+int buttonPresses = 0; // counts times button1 has been pressed
+
+int angle = 0;
+int angle2 = 0;
+
+void setup() {
+  Serial.begin(9600); //initialize serial port
+//  pinMode(LED, OUTPUT); 
+  pinMode(button1, INPUT);
+  pinMode(button2, INPUT);
+//  digitalWrite(LED, LOW);
+
+  servo1.attach(5); //servo motor 1 attached to pin 5 on arduino
+  servo2.attach(4); //servo motor 1 attached to pin 4 on arduino
+  
+  Serial.println("Setup completed\n");
+  angle = 0;
+}
+
+void loop() {
+  button1state = digitalRead(button1); //buttonstate reads state of button 1
+
+  if (button1state == HIGH) { //if button 1 is pressed 
+    Serial.println("Button1 is pressed");
+    buttonPresses++; //button presses increment by 1
+    
+//    digitalWrite(LED, HIGH); //turn LED on
+
+  //PRESET MODE 1: VIEWING MODE (tablet angles back to 135deg)
+    if (buttonPresses % 2 == 1) { //if button is pressed an odd number of times
+      Serial.println("Entered preset 1\n");
+
+      if (angle == 0) { //if starting from default closed position
+        while (angle != 135) { //angle up to 135deg
+          servo1.write(angle++); //in +1deg increments
+          delay(15);
+        } Serial.println("viewing mode: tablet opens up to 135deg (first time)\n");
+        return;
+      }
+      else {
+        while (angle2 != 0) { //if tablet is already forward
+          servo2.write(angle2--); //move tablet back 
+          delay(15);
+        } Serial.println("viewing mode: tablet slides back (second time)\n");
+
+        while (angle != 135) { //angle down to 135deg
+          servo1.write(angle--); //in -1deg increments 
+          delay(25);
+        } Serial.println("viewing mode: tablet goes down to 135deg (second time)\n");
+      }
+      return;
+    } //first if terminates
+    
+  //PRESET MODE 2: WRITING MODE (tablet slides forward and angles down to 180)
+    if (buttonPresses % 2 == 0) { //if button pressed even number of times 
+      Serial.println("Entered preset 2\n");
+
+      if (angle == 135) {
+        for (angle2 = 0; angle2 < 85; angle2++) { //slide tablet forward in +1deg increments
+          servo2.write(angle2); 
+          delay(25);
+        } Serial.println("writing mode: tablet slides forward\n");
+
+        while (angle != 160) { //angle down to 175deg 
+          servo1.write(angle++); //in +1deg increments
+          delay(15);
+        } Serial.println("writing mode: tablet angles down to 175deg");
+      }
+      return;
+    }
+  } digitalWrite(button1state, LOW); //resets state of button1
+
+  button2state = digitalRead(button2); //button2state reads state of button 2
+
+  if (button2state == HIGH) { //if button 2 is pressed
+    Serial.println("Button 2 is pressed");
+    
+//    digitalWrite(LED, LOW); //turn LED off
+    
+    if (buttonPresses % 2 == 1) { //if pressed odd number of times (preset mode 1)
+      while (angle != 0) { //while angle is not 0
+        servo1.write(angle--); //motor goes down to 0 by -1deg increments (closes)
+        delay(25); //speed
+      } Serial.println("motor 1 goes DOWN to 0");
+      return;
+      
+    } else { //if pressed even number of times (preset 2)
+      while (angle2 != 0) {
+        servo2.write(angle2--); //first tablet slides back
+        delay(15);
+      } Serial.println("tablet slides BACK");
+    
+      while (angle != 0) { //while angle is not 0
+        servo1.write(angle--); //motor goes down to 0 by -1deg increments (tablet closes)
+        delay(15); //speed 
+        } Serial.println("Tablet angles down to 0deg");
+       return;
+     }
+
+    digitalWrite(button2state, LOW); //resets state of button2
+  }
+}
